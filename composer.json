@@ -13,9 +13,7 @@
     ],
 	"require": {
 		"php": ">=5.5.9",
-		"laravel/framework": "5.1.*",
-		"nesbot/carbon": "~1.19",
-		"predis/predis": "~1.1@dev"
+		"laravel/framework": "5.1.*"
 	},
     "autoload": {
         "psr-4": {"WechatJSSDK\\": "src/"}
