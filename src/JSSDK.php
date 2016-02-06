@@ -59,6 +59,7 @@ class JSSDK
             $res = json_decode($this->httpGet($url));
             if (isset($res->ticket)) {
                 $ticket             = $res->ticket;
+                $data               = new \stdClass;
                 $data->expire_time  = time() + 7000;
                 $data->jsapi_ticket = $ticket;
                 Cache::put(self::$ticketKey, serialize($data), Carbon::now()->addMinutes(120));
@@ -86,6 +87,7 @@ class JSSDK
             $res = json_decode($this->httpGet($url));
             if (isset($res->access_token)) {
                 $access_token       = $res->access_token;
+                $data               = new \stdClass;
                 $data->expire_time  = time() + 7000;
                 $data->access_token = $access_token;
                 Cache::put(self::$tokenKey, serialize($data), Carbon::now()->addMinutes(120));
