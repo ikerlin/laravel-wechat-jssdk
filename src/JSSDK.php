@@ -6,22 +6,23 @@ use Cache;
 
 class JSSDK
 {
-    private $appId;
-    private $appSecret;
+    private static $appId;
+    private static $appSecret;
     private $ticketKey;
     private $tokenKey;
+	private $errMsg;	
     
-    public function __construct($appId, $appSecret)
+    public function __construct()
     {
-        $this->appId     = $appId;
-        $this->appSecret = $appSecret;
-        $this->ticketKey = "WechatJSSDK:" . $appId . ":jsapi_ticket";
-        $this->tokenKey  = "WechatJSSDK:" . $appId . ":access_token";
+        $this->ticketKey = "WechatJSSDK:" . self::$appId . ":jsapi_ticket";
+        $this->tokenKey  = "WechatJSSDK:" . self::$appId . ":access_token";
     }
     
     public function getSignPackage()
     {
         $jsapiTicket = $this->getJsApiTicket();
+		
+		if($this->errMsg) return $this->errMsg;
         
         // 注意 URL 一定要动态获取，不能 hardcode.
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -35,14 +36,14 @@ class JSSDK
         
         $signature = sha1($string);
         
-        $signPackage = array(
+        $signPackage = [
             "appId" => $this->appId,
             "nonceStr" => $nonceStr,
             "timestamp" => $timestamp,
             "url" => $url,
             "signature" => $signature,
-            "rawString" => $string
-        );
+            "rawString" => $string		
+		];
         return $signPackage;
     }
     
@@ -54,16 +55,20 @@ class JSSDK
         
         if (!isset($data) OR $data->expire_time < time()) {
             $accessToken = $this->getAccessToken();
+			if(empty($accessToken))return;
             // 如果是企业号用以下 URL 获取 ticket
             // $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
             $url         = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=$accessToken";
             $res         = json_decode($this->httpGet($url));
-            $ticket      = $res->ticket;
-            if ($ticket) {
+            if (isset($res->ticket)) {
+				$ticket      = $res->ticket;
                 $data->expire_time  = time() + 7000;
                 $data->jsapi_ticket = $ticket;
                 Cache::put($this->ticketKey, serialize($data), Carbon::now()->addMinutes(120));
-            }
+            } else {
+				$ticket      = null;
+				$this->errMsg = $res;
+			}
         } else {
             $ticket = $data->jsapi_ticket;
         }
@@ -80,14 +85,17 @@ class JSSDK
         if (!isset($data) OR $data->expire_time < time()) {
             // 如果是企业号用以下URL获取access_token
             // $url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=$this->appId&corpsecret=$this->appSecret";
-            $url          = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=$this->appId&secret=$this->appSecret";
+            $url          = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=".self::$appId."&secret=".self::$appSecret;
             $res          = json_decode($this->httpGet($url));
-            $access_token = $res->access_token;
-            if ($access_token) {
+            if (isset($res->access_token)) {
+				$access_token = $res->access_token;
                 $data->expire_time  = time() + 7000;
                 $data->access_token = $access_token;
                 Cache::put($this->tokenKey, serialize($data), Carbon::now()->addMinutes(120));
-            }
+            } else {
+				$access_token = null;
+				$this->errMsg = $res;
+			}
         } else {
             $access_token = $data->access_token;
         }
@@ -101,8 +109,8 @@ class JSSDK
         curl_setopt($curl, CURLOPT_TIMEOUT, 500);
         // 为保证第三方服务器与微信服务器之间数据传输的安全性，所有微信接口采用https方式调用，必须使用下面2行代码打开ssl安全校验。
         // 如果在部署过程中代码在此处验证失败，请到 http://curl.haxx.se/ca/cacert.pem 下载新的证书判别文件。
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, true);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 2);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($curl, CURLOPT_URL, $url);
         
         $res = curl_exec($curl);
@@ -110,5 +118,12 @@ class JSSDK
         
         return $res;
     }
-    
+	
+    public static function set($appId, $appSecret)
+    {
+        self::$appId     = $appId;
+        self::$appSecret = $appSecret;
+		return new self();
+    }	
+	
 }
