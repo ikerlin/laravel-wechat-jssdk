@@ -2,10 +2,8 @@
     "name": "freyo/laravel-wechat-jssdk",
     "type": "library",
     "description": "laravel wechat js-sdk",
-	"version": "1.0.0",
 	"require": {
-		"php": ">=5.5.9",
-		"laravel/framework": "5.1.*"
+		"php": ">=5.5.9"
 	},
 	"repositories": [
 		{
