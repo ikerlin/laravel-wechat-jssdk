@@ -6,23 +6,18 @@ use Cache;
 
 class JSSDK
 {
-    private static $appId;
-    private static $appSecret;
-    private $ticketKey;
-    private $tokenKey;
-	private $errMsg;	
-    
-    public function __construct()
-    {
-        $this->ticketKey = "WechatJSSDK:" . self::$appId . ":jsapi_ticket";
-        $this->tokenKey  = "WechatJSSDK:" . self::$appId . ":access_token";
-    }
+    protected static $appId;
+    protected static $appSecret;
+    protected static $ticketKey;
+    protected static $tokenKey;
+    protected $errMsg;
     
     public function getSignPackage()
     {
         $jsapiTicket = $this->getJsApiTicket();
-		
-		if($this->errMsg) return $this->errMsg;
+        
+        if ($this->errMsg)
+            return $this->errMsg;
         
         // 注意 URL 一定要动态获取，不能 hardcode.
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -36,39 +31,41 @@ class JSSDK
         
         $signature = sha1($string);
         
-        $signPackage = [
-            "appId" => $this->appId,
+        $signPackage = array(
+            "appId" => self::$appId,
             "nonceStr" => $nonceStr,
             "timestamp" => $timestamp,
             "url" => $url,
             "signature" => $signature,
-            "rawString" => $string		
-		];
+            "rawString" => $string
+        );
+        
         return $signPackage;
     }
     
     private function getJsApiTicket()
     {
-        if (Cache::has($this->ticketKey)) {
-            $data = unserialize(Cache::get($this->ticketKey));
+        if (Cache::has(self::$ticketKey)) {
+            $data = unserialize(Cache::get(self::$ticketKey));
         }
         
         if (!isset($data) OR $data->expire_time < time()) {
             $accessToken = $this->getAccessToken();
-			if(empty($accessToken))return;
+            if (empty($accessToken))
+                return;
             // 如果是企业号用以下 URL 获取 ticket
             // $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
-            $url         = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=$accessToken";
-            $res         = json_decode($this->httpGet($url));
+            $url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=$accessToken";
+            $res = json_decode($this->httpGet($url));
             if (isset($res->ticket)) {
-				$ticket      = $res->ticket;
+                $ticket             = $res->ticket;
                 $data->expire_time  = time() + 7000;
                 $data->jsapi_ticket = $ticket;
-                Cache::put($this->ticketKey, serialize($data), Carbon::now()->addMinutes(120));
+                Cache::put(self::$ticketKey, serialize($data), Carbon::now()->addMinutes(120));
             } else {
-				$ticket      = null;
-				$this->errMsg = $res;
-			}
+                $ticket       = null;
+                $this->errMsg = $res;
+            }
         } else {
             $ticket = $data->jsapi_ticket;
         }
@@ -78,27 +75,28 @@ class JSSDK
     
     private function getAccessToken()
     {
-        if (Cache::has($this->tokenKey)) {
-            $data = unserialize(Cache::get($this->tokenKey));
+        if (Cache::has(self::$tokenKey)) {
+            $data = unserialize(Cache::get(self::$tokenKey));
         }
         
         if (!isset($data) OR $data->expire_time < time()) {
             // 如果是企业号用以下URL获取access_token
-            // $url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=$this->appId&corpsecret=$this->appSecret";
-            $url          = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=".self::$appId."&secret=".self::$appSecret;
-            $res          = json_decode($this->httpGet($url));
+            // $url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=".self::$appId."&corpsecret=".self::$appSecret;
+            $url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" . self::$appId . "&secret=" . self::$appSecret;
+            $res = json_decode($this->httpGet($url));
             if (isset($res->access_token)) {
-				$access_token = $res->access_token;
+                $access_token       = $res->access_token;
                 $data->expire_time  = time() + 7000;
                 $data->access_token = $access_token;
-                Cache::put($this->tokenKey, serialize($data), Carbon::now()->addMinutes(120));
+                Cache::put(self::$tokenKey, serialize($data), Carbon::now()->addMinutes(120));
             } else {
-				$access_token = null;
-				$this->errMsg = $res;
-			}
+                $access_token = null;
+                $this->errMsg = $res;
+            }
         } else {
             $access_token = $data->access_token;
         }
+        
         return $access_token;
     }
     
@@ -118,12 +116,14 @@ class JSSDK
         
         return $res;
     }
-	
+    
     public static function set($appId, $appSecret)
     {
         self::$appId     = $appId;
         self::$appSecret = $appSecret;
-		return new self();
-    }	
-	
+        self::$ticketKey = "WechatJSSDK:" . $appId . ":jsapi_ticket";
+        self::$tokenKey  = "WechatJSSDK:" . $appId . ":access_token";
+        return new self();
+    }
+    
 }
