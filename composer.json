@@ -2,15 +2,6 @@
     "name": "Freyo/Laravel-WechatJSSDK",
     "type": "library",
     "description": "Laravel Wechat JSSDK",
-    "authors": [
-        {
-            "name": "Wechat Team",
-        },
-        {
-            "name": "Freyo",
-            "email": "freyhsiao@gmail.com"
-        },
-    ],
 	"require": {
 		"php": ">=5.5.9",
 		"laravel/framework": "5.1.*"
