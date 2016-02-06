@@ -1,0 +1,29 @@
+{
+    "name": "Freyo/Laravel-WechatJSSDK",
+    "type": "library",
+    "description": "Laravel Wechat JSSDK",
+    "authors": [
+        {
+            "name": "Wechat Team",
+        },
+        {
+            "name": "Freyo",
+            "email": "freyhsiao@gmail.com"
+        },
+    ],
+	"require": {
+		"php": ">=5.5.9",
+		"laravel/framework": "5.1.*",
+		"nesbot/carbon": "~1.19",
+		"predis/predis": "~1.1@dev"
+	},
+    "autoload": {
+        "psr-4": {"WechatJSSDK\\": "src/"}
+    },
+	"repositories": {
+		"packagist": {
+			"type": "composer",
+			"url": "http://packagist.phpcomposer.com"
+		}
+	}	
+}
