@@ -1,5 +1,5 @@
 ```php
-use WechatJSSDK\JSSDK as WechatJSSDK;
+use WechatDev\WechatJSSDK as WechatJSSDK;
 
 Route::get('/', function () {
 	$signPackage = WechatJSSDK::set("your_appid","your_appsecrect")->getSignPackage();

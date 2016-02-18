@@ -1,15 +1,17 @@
 <?php
-namespace WechatJSSDK;
+namespace WechatDev;
 
 use Carbon;
 use Cache;
+use Request;
 
-class JSSDK
+class WechatJSSDK
 {
     protected static $appId;
     protected static $appSecret;
     protected static $ticketKey;
     protected static $tokenKey;
+
     protected $errMsg;
     
     public function getSignPackage()
@@ -20,8 +22,7 @@ class JSSDK
             return $this->errMsg;
         
         // 注意 URL 一定要动态获取，不能 hardcode.
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-        $url      = "$protocol$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $url      = Request::getUri();
         
         $timestamp = time();
         $nonceStr  = str_random(16);
