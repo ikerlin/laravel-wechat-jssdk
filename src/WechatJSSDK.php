@@ -7,13 +7,43 @@ use Request;
 
 class WechatJSSDK
 {
-    protected static $appId;
-    protected static $appSecret;
-    protected static $ticketKey;
-    protected static $tokenKey;
+    private static $appId;
+    private static $appSecret;
+    private static $ticketKey;
+    private static $tokenKey;
+	private static $shareLink;
+	
+    private $errMsg;
+	
+    public static function set($appId, $appSecret)
+    {
+        self::$appId     = $appId;
+        self::$appSecret = $appSecret;
+        self::$ticketKey = "WechatJSSDK:" . $appId . ":jsapi_ticket";
+        self::$tokenKey  = "WechatJSSDK:" . $appId . ":access_token";
+        return new self();
+    }
+	
+	public function setShareLink($link, $prefix=false)
+	{
+		if($prefix){
+			$_link = parse_url($link);
 
-    protected $errMsg;
-    
+			if(!isset($_link['host'])){
+				$link = $_SERVER['HTTP_HOST'].$link;
+			}
+		
+			if(!isset($_link['scheme'])){
+				$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+				$link = $protocol.$link;
+			}			
+		}
+		
+		self::$shareLink = $link;
+		
+		return $this;
+	}
+
     public function getSignPackage()
     {
         $jsapiTicket = $this->getJsApiTicket();
@@ -21,9 +51,9 @@ class WechatJSSDK
         if ($this->errMsg)
             return $this->errMsg;
         
-        // 注意 URL 一定要动态获取，不能 hardcode.
+        // 注意 URL 一定要动态获取，不能 hardcode. 与页面分享的URL一致
 		$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-		$url = "$protocol$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+		$url = isset(self::$shareLink) ? self::$shareLink : "$protocol$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         
         $timestamp = time();
         $nonceStr  = str_random(16);
@@ -120,14 +150,4 @@ class WechatJSSDK
         
         return $res;
     }
-    
-    public static function set($appId, $appSecret)
-    {
-        self::$appId     = $appId;
-        self::$appSecret = $appSecret;
-        self::$ticketKey = "WechatJSSDK:" . $appId . ":jsapi_ticket";
-        self::$tokenKey  = "WechatJSSDK:" . $appId . ":access_token";
-        return new self();
-    }
-    
 }
