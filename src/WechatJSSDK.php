@@ -1,7 +1,7 @@
 <?php
 namespace WechatDev;
 
-use Carbon;
+use Carbon\Carbon;
 use Cache;
 use Request;
 
